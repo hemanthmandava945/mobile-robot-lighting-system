@@ -1,0 +1,95 @@
+// Handles input and output
+#include <iostream>
+ 
+// For delay function
+#include <chrono> 
+ 
+// Handles threads of program execution
+#include <thread>
+ 
+// Signal handling
+#include <signal.h>
+
+#include <JetsonGPIO.h>
+
+#include "ros/ros.h"
+
+#include "geometry_msgs/Twist.h"
+
+ 
+// Pin Definitions
+int led_pinr = 16;//pinr(right indicator pin)
+ 
+// Pin Definitions
+int led_pinl = 15;//pinl(left indicator pin)
+
+// Pin Definitions
+int led_pint = 21;//pinr(Tail indicator pin)
+
+void lightCallback(const geometry_msgs::Twist& vel)
+{
+
+    
+    //ROS_INFO ("Angular veloity: [%f]", vel.angular.z);
+
+    
+    if(vel.angular.z > 0)
+    {
+        
+        GPIO::output(led_pinr, GPIO::HIGH );
+        GPIO::output(led_pinl, GPIO::LOW );
+        /*std::cout << "Right LED is ON" << std::endl;
+        ROS_INFO ("value 1 Test: [%f]",vel.angular.z);*/
+
+    }
+    else if (vel.angular.z < 0)
+    {
+        
+        GPIO::output(led_pinl, GPIO::HIGH );
+        GPIO::output(led_pinr, GPIO::LOW );
+        /*std::cout << "LEFT LED is ON" << std::endl;
+        ROS_INFO ("value 2 Test: [%f]", vel.angular.z);*/
+    }
+   else
+    {
+        GPIO::output(led_pinr, GPIO::LOW );
+        GPIO::output(led_pinl, GPIO::LOW );
+        /*ROS_INFO ("value 0 Test: [%f]", vel.angular.z);*/
+    }
+    
+
+    //ROS_INFO ("Linear veloity: [%f]", vel.linear.x);
+
+    if(vel.linear.x == 0)
+    {
+        
+        GPIO::output(led_pint, GPIO::HIGH );
+        //std::cout << "Back LED is ON" << std::endl;
+        //ROS_INFO ("linear value Test: [%f]",vel.linear.x);
+    }
+    else
+    {
+        GPIO::output(led_pint, GPIO::LOW );
+        //std::cout << "Back LED is OFF" << std::endl;
+        //ROS_INFO ("linear value Test: [%f]",vel.linear.x);
+    }
+
+}
+
+int main(int argc, char **argv)
+ {
+    
+    ros::init(argc, argv, "listener");
+    ros::NodeHandle n;
+    ros::Subscriber sub = n.subscribe("/RosAria/cmd_vel", 10, lightCallback);
+
+    GPIO::setmode(GPIO::BOARD);
+    // LED pin gets set to low initially
+    GPIO::setup(led_pinr, GPIO::OUT, GPIO::LOW);
+    GPIO::setup(led_pinl, GPIO::OUT, GPIO::LOW);
+    GPIO::setup(led_pint, GPIO::OUT, GPIO::LOW);
+    ros::spin();   
+    return 0;
+
+ }
+
